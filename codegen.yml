@@ -1,0 +1,7 @@
+schema: "tj-lending-schema.graphql"
+documents: "./queries/**/*.ts"
+generates:
+  graphql/generated.ts:
+    plugins:
+      - typescript
+      - typescript-operations
