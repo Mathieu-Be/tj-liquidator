@@ -2560,7 +2560,10 @@ export enum _SubgraphErrorPolicy_ {
   Deny = 'deny'
 }
 
-export type AccountsQueryVariables = Exact<{ [key: string]: never; }>;
+export type AccountsToLiquidateQueryVariables = Exact<{
+  health_gt?: InputMaybe<Scalars['BigDecimal']>;
+  health_lt?: InputMaybe<Scalars['BigDecimal']>;
+}>;
 
 
-export type AccountsQuery = { __typename?: 'Query', accounts: Array<{ __typename?: 'Account', id: string, health: any, totalBorrowValueInUSD: any, totalCollateralValueInUSD: any }> };
+export type AccountsToLiquidateQuery = { __typename?: 'Query', accounts: Array<{ __typename?: 'Account', id: string, health: any, totalBorrowValueInUSD: any, totalCollateralValueInUSD: any, tokens: Array<{ __typename?: 'AccountJToken', symbol: string, supplyBalanceUnderlying: any, borrowBalanceUnderlying: any, enteredMarket: boolean }> }> };

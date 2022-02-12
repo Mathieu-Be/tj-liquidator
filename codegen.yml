@@ -1,5 +1,5 @@
 schema: "tj-lending-schema.graphql"
-documents: "./queries/**/*.ts"
+documents: "./graphql/**/*.ts"
 generates:
   graphql/generated.ts:
     plugins:
