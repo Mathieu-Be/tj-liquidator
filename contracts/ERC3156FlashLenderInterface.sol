@@ -34,4 +34,30 @@ interface ERC3156FlashLenderInterface {
         uint256 amount,
         bytes calldata data
     ) external returns (bool);
+
+    /**
+     * @notice Transfer `amount` tokens from `msg.sender` to `dst`
+     * @param dst The address of the destination account
+     * @param amount The number of tokens to transfer
+     * @return Whether or not the transfer succeeded
+     */
+    function transfer(address dst, uint256 amount) external returns (bool);
+
+    /**
+     * @notice Sender supplies assets into the market and receives jTokens in exchange
+     * @dev Accrues interest whether or not the operation succeeds, unless reverted
+     * @param mintAmount The amount of the underlying asset to supply
+     * @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     */
+    function mint(uint256 mintAmount) external returns (uint256);
+
+    /**
+     * @notice Approve `spender` to transfer up to `amount` from `src`
+     * @dev This will overwrite the approval amount for `spender`
+     *  and is subject to issues noted [here](https://eips.ethereum.org/EIPS/eip-20#approve)
+     * @param spender The address of the account which may transfer tokens
+     * @param amount The number of tokens that are approved (-1 means infinite)
+     * @return Whether or not the approval succeeded
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
 }

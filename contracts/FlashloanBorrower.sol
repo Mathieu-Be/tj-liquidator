@@ -12,9 +12,7 @@ interface Comptroller {
 interface ERC20 {
     function approve(address spender, uint256 amount) external;
 
-    function transfer(address to, uint256 amount) external;
-
-    function balanceOf(address account) external;
+    function balanceOf(address account) external view returns (uint256);
 }
 
 // FlashloanBorrower is a simple flashloan Borrower implementation for testing
@@ -31,7 +29,7 @@ contract FlashloanBorrower is ERC3156FlashBorrowerInterface {
     function doFlashloan(address flashloanLender, uint256 borrowAmount)
         external
     {
-        console.log("Debut flashloan");
+        console.log("Debut flashloan", flashloanLender);
         bytes memory data = abi.encode(borrowAmount);
         ERC3156FlashLenderInterface(flashloanLender).flashLoan(
             this,
@@ -66,9 +64,11 @@ contract FlashloanBorrower is ERC3156FlashBorrowerInterface {
             borrowAmount == amount,
             "encoded data (borrowAmount) does not match"
         );
-        ERC20(token).approve(msg.sender, amount + fee);
 
-        ERC20(token).transfer(token, amount / 2);
+        console.log("Debut approve");
+        ERC20(token).approve(msg.sender, amount + fee);
+        uint256 b = ERC20(token).balanceOf(address(this));
+        require(b >= amount + fee, "insuficient balance");
 
         return keccak256("ERC3156FlashBorrowerInterface.onFlashLoan");
     }

@@ -5,7 +5,14 @@ import { Account } from "../graphql/generated";
 import JAvaxDelegator from "../ABI/JAvaxDelegator.json";
 import Joetroller from "../ABI/Joetroller.json";
 import { Interface } from "@ethersproject/abi";
-import { Contract, ContractFactory, Overrides, utils } from "ethers";
+import {
+  Contract,
+  ContractFactory,
+  ContractReceipt,
+  ContractTransaction,
+  Overrides,
+  utils,
+} from "ethers";
 
 const jUSDC_address = ethers.utils.getAddress(JAvaxDelegator.address);
 const Joetroller_address = ethers.utils.getAddress(Joetroller.address);
@@ -35,13 +42,8 @@ const main = async () => {
   );
 
   let overrides = {
-    value: utils.parseEther("5"),
+    value: utils.parseEther("690"),
   };
-
-  await network.provider.request({
-    method: "hardhat_stopImpersonatingAccount",
-    params: ["0xdf3e18d64bc6a983f673ab319ccae4f1a57c7097"],
-  });
 
   let javax = new ethers.Contract(jUSDC_address, jUSDC_interfacte, signer);
 
@@ -59,11 +61,39 @@ const main = async () => {
   await flash.deployed();
   console.log(`Flash deployed to: ${flash.address}`);
 
-  await javax.transfer(flash.address, utils.parseEther("4"));
+  let wavax = await ethers.getContractAt(
+    "WAVAX",
+    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+    signer
+  );
 
-  let tx = await flash.doFlashloan(jUSDC_address, utils.parseEther("0.0005"));
+  let tx = {
+    to: wavax.address,
+    value: ethers.utils.parseEther("200"),
+  };
 
-  console.log(tx);
+  await signer.sendTransaction(tx);
+
+  const balance = await wavax.balanceOf(await wavax.signer.getAddress());
+  console.log("Balance : ", utils.formatEther(balance));
+
+  // await wavax.approve(javax.address, balance);
+  // console.log("Approved");
+
+  // await javax.mintNative({ value: balance });
+  // console.log("Minted");
+
+  // let javaxbalance = await javax.balanceOf(signer.address);
+  // console.log(ethers.utils.formatEther(javaxbalance));
+
+  await wavax.transfer(flash.address, balance);
+
+  // let javaxbalancecontract = await javax.balanceOf(flash.address);
+  // console.log(ethers.utils.formatEther(javaxbalancecontract));
+
+  await flash.doFlashloan(jUSDC_address, utils.parseEther("500"));
+
+  console.log("Yooooooo ca a marché");
 };
 
 main();
