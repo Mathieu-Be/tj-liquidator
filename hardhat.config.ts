@@ -2,7 +2,8 @@ import { task } from "hardhat/config";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { BigNumber } from "ethers";
 import "@nomiclabs/hardhat-waffle";
-import { main } from "./scripts/liquidate-oneshot";
+import "@nomiclabs/hardhat-ethers";
+import "@typechain/hardhat";
 
 // When using the hardhat network, you may choose to fork Fuji or Avalanche Mainnet
 // This will allow you to debug contracts using the hardhat network while keeping the current network state
@@ -44,18 +45,6 @@ task(
       );
       console.log(`${account.address} has balance ${balance.toString()}`);
     }
-  }
-);
-
-task(
-  "liquidate-oneshot",
-  "liquidates someone random",
-  async (args, hre): Promise<void> => {
-    const USCDholder = "0x364d6D0333432C3Ac016Ca832fb8594A8cE43Ca6";
-    await hre.network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: [USCDholder],
-    });
   }
 );
 
