@@ -1,29 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.0;
 
-import "./ERC3156FlashLenderInterface.sol";
-import "./ERC3156FlashBorrowerInterface.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+import "./interfaces/traderjoe/ERC3156FlashBorrowerInterface.sol";
+import "./interfaces/traderjoe/JCollateralCapErc20.sol";
+import "./interfaces/traderjoe/JTokenInterface.sol";
+import "./interfaces/traderjoe/Joetroller.sol";
+import "./interfaces/traderjoe/JoeRouter02.sol";
+
 import "hardhat/console.sol";
 
-interface Comptroller {
-    function isMarketListed(address cTokenAddress) external view returns (bool);
-}
-
-interface ERC20 {
-    function approve(address spender, uint256 amount) external;
-
-    function balanceOf(address account) external view returns (uint256);
-}
-
-// FlashloanBorrower is a simple flashloan Borrower implementation for testing
-contract FlashloanBorrower is ERC3156FlashBorrowerInterface {
+contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
     /**
-     * @notice C.R.E.A.M. comptroller address
+     * @notice Joetroller address
      */
-    address public comptroller;
+    address public joetroller;
 
-    constructor(address _comptroller) {
-        comptroller = _comptroller;
+    constructor(address _joetroller) {
+        joetroller = _joetroller;
     }
 
     function doFlashloan(address flashloanLender, uint256 borrowAmount)
@@ -31,7 +27,7 @@ contract FlashloanBorrower is ERC3156FlashBorrowerInterface {
     {
         console.log("Debut flashloan", flashloanLender);
         bytes memory data = abi.encode(borrowAmount);
-        ERC3156FlashLenderInterface(flashloanLender).flashLoan(
+        JCollateralCapErc20(flashloanLender).flashLoan(
             this,
             address(this),
             borrowAmount,
@@ -48,7 +44,7 @@ contract FlashloanBorrower is ERC3156FlashBorrowerInterface {
     ) external override returns (bytes32) {
         console.log("Debut onflashloan");
         require(
-            Comptroller(comptroller).isMarketListed(msg.sender),
+            Joetroller(joetroller).markets(msg.sender).isListed,
             "untrusted message sender"
         );
         require(
@@ -66,8 +62,8 @@ contract FlashloanBorrower is ERC3156FlashBorrowerInterface {
         );
 
         console.log("Debut approve");
-        ERC20(token).approve(msg.sender, amount + fee);
-        uint256 b = ERC20(token).balanceOf(address(this));
+        IERC20(token).approve(msg.sender, amount + fee);
+        uint256 b = IERC20(token).balanceOf(address(this));
         require(b >= amount + fee, "insuficient balance");
 
         return keccak256("ERC3156FlashBorrowerInterface.onFlashLoan");

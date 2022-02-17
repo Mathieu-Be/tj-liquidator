@@ -24,6 +24,7 @@ const AccountsToLiquidateQueryDocument = gql`
       totalCollateralValueInUSD
       tokens {
         symbol
+        id
         supplyBalanceUnderlying
         borrowBalanceUnderlying
         enteredMarket

@@ -23,17 +23,17 @@ const Joetroller__interfacte = new Interface(Joetroller.abi);
 const main = async () => {
   let array: Account[] = [];
 
-  // await AccountsToLiquidate(0, 1).then((accounts) => {
-  //   array = accounts;
-  // });
+  await AccountsToLiquidate(0, 1).then((accounts) => {
+    array = accounts;
+  });
 
-  // var res = array.reduce((prev, current) => {
-  //   return prev.totalBorrowValueInUSD > current.totalBorrowValueInUSD
-  //     ? prev
-  //     : current;
-  // });
+  var res = array.reduce((prev, current) => {
+    return prev.totalBorrowValueInUSD > current.totalBorrowValueInUSD
+      ? prev
+      : current;
+  });
 
-  // console.log(res);
+  console.log(res);
 
   // console.log(await ethers.provider.getBlock("latest"));
 
@@ -54,7 +54,7 @@ const main = async () => {
   await console.log(utils.formatEther(await javax.balanceOf(signer.address)));
 
   const Flash: ContractFactory = await ethers.getContractFactory(
-    "FlashloanBorrower"
+    "JoeLiquidatoor"
   );
   const flash: Contract = await Flash.deploy(Joetroller_address);
 
@@ -77,19 +77,7 @@ const main = async () => {
   const balance = await wavax.balanceOf(await wavax.signer.getAddress());
   console.log("Balance : ", utils.formatEther(balance));
 
-  // await wavax.approve(javax.address, balance);
-  // console.log("Approved");
-
-  // await javax.mintNative({ value: balance });
-  // console.log("Minted");
-
-  // let javaxbalance = await javax.balanceOf(signer.address);
-  // console.log(ethers.utils.formatEther(javaxbalance));
-
   await wavax.transfer(flash.address, balance);
-
-  // let javaxbalancecontract = await javax.balanceOf(flash.address);
-  // console.log(ethers.utils.formatEther(javaxbalancecontract));
 
   await flash.doFlashloan(jUSDC_address, utils.parseEther("500"));
 
