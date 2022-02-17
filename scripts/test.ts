@@ -1,24 +1,17 @@
-import { ethers, network } from "hardhat";
+import { ethers } from "hardhat";
 import { AccountsToLiquidate } from "../graphql/accounts.queries";
 import { Account } from "../graphql/generated";
+import { Contract, ContractFactory, utils } from "ethers";
 
 import JAvaxDelegator from "../ABI/JAvaxDelegator.json";
 import Joetroller from "../ABI/Joetroller.json";
-import { Interface } from "@ethersproject/abi";
-import {
-  Contract,
-  ContractFactory,
-  ContractReceipt,
-  ContractTransaction,
-  Overrides,
-  utils,
-} from "ethers";
+import IERC20 from "../artifacts/@openzeppelin/contracts/token/ERC20/IERC20.sol/IERC20.json";
+import { Interface } from "ethers/lib/utils";
 
-const jUSDC_address = ethers.utils.getAddress(JAvaxDelegator.address);
+const jAvax_address = ethers.utils.getAddress(JAvaxDelegator.address);
 const Joetroller_address = ethers.utils.getAddress(Joetroller.address);
-
-const jUSDC_interfacte = new Interface(JAvaxDelegator.abi);
-const Joetroller__interfacte = new Interface(Joetroller.abi);
+const wAvax_address = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
+const IERC20_interface = new Interface(IERC20.abi);
 
 const main = async () => {
   let array: Account[] = [];
@@ -35,53 +28,31 @@ const main = async () => {
 
   console.log(res);
 
-  // console.log(await ethers.provider.getBlock("latest"));
-
   let signer = await ethers.getSigner(
     "0xdf3e18d64bc6a983f673ab319ccae4f1a57c7097"
   );
 
-  let overrides = {
-    value: utils.parseEther("690"),
-  };
-
-  let javax = new ethers.Contract(jUSDC_address, jUSDC_interfacte, signer);
-
-  console.log(utils.formatEther(await javax.balanceOf(signer.address)));
-
-  await javax.mintNative(overrides);
-
-  await console.log(utils.formatEther(await javax.balanceOf(signer.address)));
-
-  const Flash: ContractFactory = await ethers.getContractFactory(
+  const myLiquidator: ContractFactory = await ethers.getContractFactory(
     "JoeLiquidatoor"
   );
-  const flash: Contract = await Flash.deploy(Joetroller_address);
+  const liquidator: Contract = await myLiquidator.deploy(Joetroller_address);
 
-  await flash.deployed();
-  console.log(`Flash deployed to: ${flash.address}`);
+  await liquidator.deployed();
+  console.log(`Flash deployed to: ${liquidator.address}`);
 
-  let wavax = await ethers.getContractAt(
-    "WAVAX",
-    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
-    signer
-  );
+  let wavax = new Contract(wAvax_address, IERC20_interface, signer);
 
+  //fund contract with wavax so I can reimburse the loan without worrying
   let tx = {
     to: wavax.address,
     value: ethers.utils.parseEther("200"),
   };
-
   await signer.sendTransaction(tx);
+  await wavax.transfer(liquidator.address, ethers.utils.parseEther("200"));
 
-  const balance = await wavax.balanceOf(await wavax.signer.getAddress());
-  console.log("Balance : ", utils.formatEther(balance));
-
-  await wavax.transfer(flash.address, balance);
-
-  await flash.doFlashloan(jUSDC_address, utils.parseEther("500"));
-
-  console.log("Yooooooo ca a marché");
+  await liquidator.doFlashloan(jAvax_address, utils.parseEther("500"));
+  //french way to be happy when the script works
+  console.log("Yooooooo ca a marché !");
 };
 
 main();

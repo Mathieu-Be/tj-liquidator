@@ -25,7 +25,6 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
     function doFlashloan(address flashloanLender, uint256 borrowAmount)
         external
     {
-        console.log("Debut flashloan", flashloanLender);
         bytes memory data = abi.encode(borrowAmount);
         JCollateralCapErc20(flashloanLender).flashLoan(
             this,
@@ -42,7 +41,6 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
         uint256 fee,
         bytes calldata data
     ) external override returns (bytes32) {
-        console.log("Debut onflashloan");
         require(
             Joetroller(joetroller).markets(msg.sender).isListed,
             "untrusted message sender"
@@ -52,16 +50,11 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
             "FlashBorrower: Untrusted loan initiator"
         );
         uint256 borrowAmount = abi.decode(data, (uint256));
-        // require(
-        //     borrowToken == token,
-        //     "encoded data (borrowToken) does not match"
-        // );
         require(
             borrowAmount == amount,
             "encoded data (borrowAmount) does not match"
         );
 
-        console.log("Debut approve");
         IERC20(token).approve(msg.sender, amount + fee);
         uint256 b = IERC20(token).balanceOf(address(this));
         require(b >= amount + fee, "insuficient balance");
