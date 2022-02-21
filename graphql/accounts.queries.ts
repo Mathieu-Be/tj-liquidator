@@ -33,13 +33,13 @@ const AccountsToLiquidateQueryDocument = gql`
   }
 `;
 
-let params = { health_gt: 0, health_lt: 1 };
-
 export const AccountsToLiquidate = async (
   health_gt: number,
   health_lt: number
 ) => {
-  let response: Subscription = await client.request(
+  const params = { health_gt: health_gt, health_lt: health_lt };
+
+  const response: Subscription = await client.request(
     AccountsToLiquidateQueryDocument,
     params
   );

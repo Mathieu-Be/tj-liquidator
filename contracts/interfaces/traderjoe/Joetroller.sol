@@ -44,4 +44,12 @@ interface Joetroller {
     function liquidationIncentiveMantissa() external view returns (uint256);
 
     function markets(address) external view returns (Market memory);
+
+    function liquidateBorrowAllowed(
+        address jTokenBorrowed,
+        address jTokenCollateral,
+        address liquidator,
+        address borrower,
+        uint256 repayAmount
+    ) external returns (uint256);
 }

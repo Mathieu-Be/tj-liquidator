@@ -38,7 +38,7 @@
     "accounts": "npx hardhat accounts",
     "balances": "npx hardhat balances",
     "generate": "graphql-codegen",
-    "typechain": "npx typechain --target=ethers-v5 --out-dir typechain-types  './ABI/*.json'"
+    "typechain": "npx typechain --target=ethers-v5 --out-dir typechain-types/from-abis  './ABI/*.json'"
   },
   "dependencies": {
     "typescript": "^4.5.5"
