@@ -16,22 +16,46 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
     /**
      * @notice Joetroller address
      */
-    address public joetroller;
+    Joetroller public joetroller;
 
-    constructor(address _joetroller) {
+    /**
+     * @notice Joetroller address
+     */
+    JoeRouter02 public joerouter;
+
+    constructor(Joetroller _joetroller, JoeRouter02 _joerouter) {
         joetroller = _joetroller;
+        joerouter = _joerouter;
     }
 
-    function doFlashloan(address flashloanLender, uint256 borrowAmount)
-        external
-    {
-        bytes memory data = abi.encode(borrowAmount);
-        JCollateralCapErc20(flashloanLender).flashLoan(
-            this,
-            address(this),
-            borrowAmount,
-            data
-        );
+    function doFlashloan(
+        address liquidationTarget,
+        JCollateralCapErc20 borrowJToken,
+        JCollateralCapErc20 collateralJToken,
+        JCollateralCapErc20 flashloanJToken,
+        uint256 repayAmount
+    ) external {
+        (, , uint256 debt) = joetroller.getAccountLiquidity(liquidationTarget);
+        require(debt > 0, "Account not underwater");
+
+        address[] memory path;
+        path = new address[](2);
+        path[0] = flashloanJToken.underlying();
+        path[1] = borrowJToken.underlying();
+
+        uint256 borrowAmount = joerouter.getAmountsOut(repayAmount, path)[
+            path.length - 1
+        ];
+
+        console.log(borrowAmount);
+
+        // bytes memory data = abi.encode(repayAmount);
+        // JCollateralCapErc20(flashloanJToken).flashLoan(
+        //     this,
+        //     address(this),
+        //     repayAmount,
+        //     data
+        // );
     }
 
     function onFlashLoan(
