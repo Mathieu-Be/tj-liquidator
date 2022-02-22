@@ -1,18 +1,12 @@
 import { ethers, network } from "hardhat";
 import { AccountsToLiquidate } from "../graphql/accounts.queries";
 import { Account } from "../graphql/generated";
-
-import JAvaxDelegatorjson from "../ABI/JAvaxDelegator.json";
 import JTokenjson from "../ABI/JUsdcDelegator.json";
 import JoeRouterjson from "../ABI/JoeRouter.json";
 import JoeTrollerjson from "../ABI/Joetroller.json";
-import Joetroller from "../ABI/Joetroller.json";
-import { Interface } from "ethers/lib/utils";
 import { JoeRouter, JUsdcDelegator } from "../typechain-types/from-abis";
 import { IERC20 } from "../typechain-types";
-import { BigNumber, utils } from "ethers";
-import { util } from "chai";
-import { exit } from "process";
+import { utils } from "ethers";
 
 const wAvax_address = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
 
@@ -90,6 +84,7 @@ const main = async () => {
   while (liquidity[1].gt(0)) {
     await network.provider.send("evm_increaseTime", [60 * 60 * 24 * 180]); // 6 month
     await jliquidatedtoken.accrueInterest();
+    await jcollateraltoken.accrueInterest();
     months += 6;
     liquidity = await joeTroller.getAccountLiquidity(borrower);
   }
@@ -122,68 +117,22 @@ const main = async () => {
     { value: utils.parseEther("800") }
   );
 
-  console.log(
-    utils.formatEther(await underlyingtokenliquidated.balanceOf(signer.address))
-  );
-
   await underlyingtokenliquidated.approve(
     jliquidatedtoken.address,
     await underlyingtokenliquidated.balanceOf(signer.address)
   );
 
-  console.log(
-    await joeTroller.callStatic.liquidateBorrowAllowed(
-      jliquidatedtoken.address,
-      jcollateraltoken.address,
-      signer.address,
-      borrower,
-      borrow_balance.div(2)
-    )
-  );
-
-  console.log(await joeTroller.getAccountLiquidity(borrower));
+  const closefactor = await joeTroller.closeFactorMantissa();
 
   let tx = await jliquidatedtoken.liquidateBorrow(
     borrower,
-    borrow_balance.div(3),
+    borrow_balance.div(1 / parseFloat(utils.formatEther(closefactor))),
     jcollateraltoken.address
   );
 
-  console.log(tx);
-
   const receipt = await tx.wait();
 
-  receipt.logs.forEach((l) => {
-    console.log(jliquidatedtoken.interface.parseLog(l));
-  });
-
-  // borrow = await jUsdc.callStatic.borrowBalanceCurrent(target);
-  // console.log(utils.formatEther(borrow));
-
-  // const myLiquidator = (await ethers.getContractFactory(
-  //   "JoeLiquidatoor"
-  // )) as JoeLiquidatoor__factory;
-  // const liquidator = await myLiquidator.deploy(Joetroller_address);
-
-  // await liquidator.deployed();
-  // console.log(`Flash deployed to: ${liquidator.address}`);
-
-  // let wavax = new Contract(wAvax_address, IERC20_interface, signer);
-
-  // //fund contract with wavax so I can reimburse the loan without worrying
-  // let tx = {
-  //   to: wavax.address,
-  //   value: ethers.utils.parseEther("200"),
-  // };
-  // await signer.sendTransaction(tx);
-  // await wavax.transfer(liquidator.address, ethers.utils.parseEther("200"));
-
-  // await liquidator.functions.doFlashloan(
-  //   jAvax_address,
-  //   utils.parseEther("500")
-  // );
-  // //french way to be happy when the script works
-  // console.log("Yooooooo ca a marché !");
+  receipt.events.forEach((e) => console.log(e.eventSignature));
 };
 
 main();

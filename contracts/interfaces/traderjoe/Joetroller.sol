@@ -52,4 +52,11 @@ interface Joetroller {
         address borrower,
         uint256 repayAmount
     ) external returns (uint256);
+
+    function repayBorrowAllowed(
+        address jToken,
+        address payer,
+        address borrower,
+        uint256 repayAmount
+    ) external returns (uint256);
 }
