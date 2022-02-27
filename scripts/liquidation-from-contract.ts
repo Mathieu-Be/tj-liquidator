@@ -25,15 +25,15 @@ const wAvax_address = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
 const main = async () => {
   let array: Account[] = [];
 
-  await AccountsToLiquidate(1, 10).then((accounts) => {
+  await AccountsToLiquidate(1, 3).then((accounts) => {
     array = accounts;
   });
 
-  array = array.filter((account) => {
-    return !account.tokens.find(
-      (t) => t.symbol === "jXJOE" && t.supplyBalanceUnderlying > 0
-    );
-  });
+  // array = array.filter((account) => {
+  //   return !account.tokens.find(
+  //     (t) => t.symbol === "jXJOE" && t.supplyBalanceUnderlying > 0
+  //   );
+  // });
 
   var res = array.reduce((prev, current) => {
     return prev.totalBorrowValueInUSD > current.totalBorrowValueInUSD
