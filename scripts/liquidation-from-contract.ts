@@ -97,11 +97,11 @@ const main = async () => {
   console.log("Account liquidity : " + utils.formatEther(liquidity[1]));
 
   let months = 0;
-  while (liquidity[1].gt(0)) {
-    await network.provider.send("evm_increaseTime", [60 * 60 * 24 * 60]); // 6 month
+  while (!liquidity[2].gt(0)) {
+    await network.provider.send("evm_increaseTime", [60 * 60 * 24 * 180]); // 6 month
     await jliquidatedtoken.accrueInterest();
     await jcollateraltoken.accrueInterest();
-    months += 2;
+    months += 6;
     liquidity = await joeTroller.getAccountLiquidity(borrower);
   }
 
@@ -119,7 +119,8 @@ const main = async () => {
   const Liquidatoor = await Liquidatoor_factory.deploy(
     JoeTrollerjson.address,
     JoeRouterjson.address,
-    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"
+    "0x57319d41F71E81F3c65F2a47CA4e001EbAFd4F33", //xJoe
+    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7" //wAvax
   );
 
   console.log("Contract deployed on : " + Liquidatoor.address);
@@ -177,6 +178,7 @@ const main = async () => {
     utils.formatEther(wavax_balance.add(avax_balance))
   );
 
+  // Monitoring using InfluxDB and Grafana
   let balancePoint = new Point("liquidation")
     .floatField("value", utils.formatEther(wavax_balance.add(avax_balance)))
     .tag("name", "tj-liquidator")
@@ -186,5 +188,3 @@ const main = async () => {
 };
 
 main();
-
-const sendLiquidationOutcome = () => {};
