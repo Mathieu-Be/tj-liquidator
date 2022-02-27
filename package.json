@@ -41,6 +41,8 @@
     "typechain": "npx typechain --target=ethers-v5 --out-dir typechain-types/from-abis  './ABI/*.json'"
   },
   "dependencies": {
+    "@influxdata/influxdb-client": "^1.23.0",
+    "influxdb-client": "^0.0.1",
     "typescript": "^4.5.5"
   },
   "engines": {

@@ -1,27 +1,39 @@
+import dotenv from "dotenv";
 import { ethers, network } from "hardhat";
 import { AccountsToLiquidate } from "../graphql/accounts.queries";
 import { Account } from "../graphql/generated";
 import JTokenjson from "../ABI/JAvaxDelegator.json";
 import JoeRouterjson from "../ABI/JoeRouter.json";
 import JoeTrollerjson from "../ABI/Joetroller.json";
-import { JoeRouter, JUsdcDelegator } from "../typechain-types/from-abis";
-import { IERC20 } from "../typechain-types";
+import { JUsdcDelegator } from "../typechain-types/from-abis";
 import { utils } from "ethers";
+import { InfluxDB, Point } from "@influxdata/influxdb-client";
+
+dotenv.config();
+const clientInflux = new InfluxDB({
+  url: process.env.INFLUXDB_URI,
+  token: process.env.INFLUXDB_TOKEN,
+});
+const avalancheBucket = clientInflux.getWriteApi(
+  "57ac5d56999288ec",
+  "Avalanche",
+  "s"
+);
 
 const wAvax_address = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
 
 const main = async () => {
   let array: Account[] = [];
 
-  await AccountsToLiquidate(1, 5).then((accounts) => {
+  await AccountsToLiquidate(1, 10).then((accounts) => {
     array = accounts;
   });
 
-  // array = array.filter((account) => {
-  //   return !account.tokens.find(
-  //     (t) => t.symbol === "jXJOE" && t.supplyBalanceUnderlying > 0
-  //   );
-  // });
+  array = array.filter((account) => {
+    return !account.tokens.find(
+      (t) => t.symbol === "jXJOE" && t.supplyBalanceUnderlying > 0
+    );
+  });
 
   var res = array.reduce((prev, current) => {
     return prev.totalBorrowValueInUSD > current.totalBorrowValueInUSD
@@ -75,6 +87,8 @@ const main = async () => {
     JoeTrollerjson.address,
     signer
   );
+
+  const wAvax = await ethers.getContractAt("IERC20", wAvax_address, signer);
 
   let liquidity = await joeTroller.getAccountLiquidity(borrower);
 
@@ -134,6 +148,10 @@ const main = async () => {
     flashloantoken_address = "0x8b650e26404AC6837539ca96812f0123601E4448";
   }
 
+  let wavax_balance = await wAvax.balanceOf(Liquidatoor.address);
+
+  let avax_balance = await signer.getBalance();
+
   const receipt = await (
     await Liquidatoor.doFlashloan(
       borrower,
@@ -148,6 +166,25 @@ const main = async () => {
     "Transaction status : " + receipt.status,
     "Gas paid : " + receipt.gasUsed.toString()
   );
+
+  wavax_balance = (await wAvax.balanceOf(Liquidatoor.address)).sub(
+    wavax_balance
+  );
+  avax_balance = (await signer.getBalance()).sub(avax_balance);
+
+  console.log(
+    "Overall earnings : ",
+    utils.formatEther(wavax_balance.add(avax_balance))
+  );
+
+  let balancePoint = new Point("liquidation")
+    .floatField("value", utils.formatEther(wavax_balance.add(avax_balance)))
+    .tag("name", "tj-liquidator")
+    .tag("version", "testv1");
+
+  avalancheBucket.writePoint(balancePoint);
 };
 
 main();
+
+const sendLiquidationOutcome = () => {};
