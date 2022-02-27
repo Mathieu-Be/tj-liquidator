@@ -13,19 +13,20 @@ import "./interfaces/traderjoe/JoeRouter02.sol";
 import "hardhat/console.sol";
 
 contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
-    /**
-     * @notice Joetroller address
-     */
-    Joetroller public joetroller;
+    Joetroller joetroller;
+    JoeRouter02 joerouter;
+    address wavax;
 
-    /**
-     * @notice Joetroller address
-     */
-    JoeRouter02 public joerouter;
-
-    constructor(Joetroller _joetroller, JoeRouter02 _joerouter) {
+    constructor(
+        Joetroller _joetroller,
+        JoeRouter02 _joerouter,
+        address _wavax
+    ) {
         joetroller = _joetroller;
         joerouter = _joerouter;
+        wavax = _wavax;
+
+        IERC20(wavax).approve(address(joerouter), type(uint256).max);
     }
 
     function doFlashloan(
@@ -46,9 +47,19 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
         console.log("Repay Amount : ", repayAmount);
 
         address[] memory path;
-        path = new address[](2);
-        path[0] = flashloanJToken.underlying();
-        path[1] = borrowJToken.underlying();
+        if (
+            flashloanJToken.underlying() == wavax ||
+            borrowJToken.underlying() == wavax
+        ) {
+            path = new address[](2);
+            path[0] = flashloanJToken.underlying();
+            path[1] = borrowJToken.underlying();
+        } else {
+            path = new address[](3);
+            path[0] = flashloanJToken.underlying();
+            path[1] = wavax;
+            path[2] = borrowJToken.underlying();
+        }
 
         console.log("Path built", path[0], path[1]);
 
@@ -74,9 +85,7 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
             data
         );
 
-        b = IERC20(address(flashloanJToken.underlying())).balanceOf(
-            address(this)
-        );
+        b = IERC20(wavax).balanceOf(address(this));
         console.log("Balance WAVAX fin : ", b);
     }
 
@@ -117,9 +126,19 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
             );
 
         address[] memory path;
-        path = new address[](2);
-        path[0] = flashloanJToken.underlying();
-        path[1] = borrowJToken.underlying();
+        if (
+            flashloanJToken.underlying() == wavax ||
+            borrowJToken.underlying() == wavax
+        ) {
+            path = new address[](2);
+            path[0] = flashloanJToken.underlying();
+            path[1] = borrowJToken.underlying();
+        } else {
+            path = new address[](3);
+            path[0] = flashloanJToken.underlying();
+            path[1] = wavax;
+            path[2] = borrowJToken.underlying();
+        }
 
         IERC20(flashloanJToken.underlying()).approve(
             address(joerouter),
@@ -157,27 +176,74 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
 
         console.log("Collat balance :", collatbalance);
 
-        path[0] = collateralJToken.underlying();
-        path[1] = flashloanJToken.underlying();
+        if (
+            collateralJToken.underlying() == wavax ||
+            flashloanJToken.underlying() == wavax
+        ) {
+            path = new address[](2);
+            path[0] = collateralJToken.underlying();
+            path[1] = flashloanJToken.underlying();
+        } else {
+            path = new address[](3);
+            path[0] = collateralJToken.underlying();
+            path[1] = wavax;
+            path[2] = flashloanJToken.underlying();
+        }
 
         IERC20(collateralJToken.underlying()).approve(
             address(joerouter),
             collatbalance
         );
 
-        joerouter.swapExactTokensForTokens(
-            collatbalance,
-            amount,
-            path,
-            address(this),
-            block.timestamp
-        );
+        uint256 finalswapamountmin = amount + fee;
+        // Si collat == wavax je veux pas swap
+        if (collateralJToken.underlying() == wavax) {
+            joerouter.swapTokensForExactTokens(
+                finalswapamountmin,
+                collatbalance,
+                path,
+                address(this),
+                block.timestamp
+            );
+            // Si flashloan == wavax je swap tout
+        } else if (token == wavax) {
+            joerouter.swapExactTokensForTokens(
+                collatbalance,
+                finalswapamountmin,
+                path,
+                address(this),
+                block.timestamp
+            );
+        }
+        // Si borrow == wavax je swap d'abord tout en wavax puis ce qu'il faut pour le flashloan
+        else {
+            address[] memory path_atomic;
+            path_atomic = new address[](2);
+            path_atomic[0] = collateralJToken.underlying();
+            path_atomic[1] = wavax;
+
+            joerouter.swapExactTokensForTokens(
+                collatbalance,
+                0,
+                path,
+                address(this),
+                block.timestamp
+            );
+
+            path_atomic[0] = wavax;
+            path_atomic[1] = token;
+
+            joerouter.swapTokensForExactTokens(
+                finalswapamountmin,
+                0,
+                path,
+                address(this),
+                block.timestamp
+            );
+        }
         console.log("Final swap done");
 
-        uint256 b = IERC20(token).balanceOf(address(this));
-        console.log("Balance WAVAX : ", b);
-
-        // require(b >= amount + fee, "insuficient balance");
+        // claim le wavax coute bcp de gas
 
         return keccak256("ERC3156FlashBorrowerInterface.onFlashLoan");
     }

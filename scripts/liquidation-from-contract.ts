@@ -13,9 +13,15 @@ const wAvax_address = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
 const main = async () => {
   let array: Account[] = [];
 
-  await AccountsToLiquidate(1, 1.1).then((accounts) => {
+  await AccountsToLiquidate(1, 5).then((accounts) => {
     array = accounts;
   });
+
+  // array = array.filter((account) => {
+  //   return !account.tokens.find(
+  //     (t) => t.symbol === "jXJOE" && t.supplyBalanceUnderlying > 0
+  //   );
+  // });
 
   var res = array.reduce((prev, current) => {
     return prev.totalBorrowValueInUSD > current.totalBorrowValueInUSD
@@ -78,10 +84,10 @@ const main = async () => {
 
   let months = 0;
   while (liquidity[1].gt(0)) {
-    await network.provider.send("evm_increaseTime", [60 * 60 * 24 * 180]); // 6 month
+    await network.provider.send("evm_increaseTime", [60 * 60 * 24 * 60]); // 6 month
     await jliquidatedtoken.accrueInterest();
     await jcollateraltoken.accrueInterest();
-    months += 6;
+    months += 2;
     liquidity = await joeTroller.getAccountLiquidity(borrower);
   }
 
@@ -98,7 +104,8 @@ const main = async () => {
 
   const Liquidatoor = await Liquidatoor_factory.deploy(
     JoeTrollerjson.address,
-    JoeRouterjson.address
+    JoeRouterjson.address,
+    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"
   );
 
   console.log("Contract deployed on : " + Liquidatoor.address);
@@ -107,12 +114,32 @@ const main = async () => {
     borrower
   );
 
+  let flashloantoken_address = "";
+  // WAVAX not involved
+  if (
+    collateraltoken_info.symbol !== "jAVAX" &&
+    liquidatedtoken_info.symbol !== "jAVAX"
+  ) {
+    flashloantoken_address = "0xC22F01ddc8010Ee05574028528614634684EC29e";
+  }
+  // USDC.e first (AVAX/USDC.e biggest pool on TJ)
+  else if (
+    collateraltoken_info.symbol !== "jUSDC" &&
+    liquidatedtoken_info.symbol !== "jUSDC"
+  ) {
+    flashloantoken_address = "0xEd6AaF91a2B084bd594DBd1245be3691F9f637aC";
+  }
+  // USDT second (second biggest pool)
+  else {
+    flashloantoken_address = "0x8b650e26404AC6837539ca96812f0123601E4448";
+  }
+
   const receipt = await (
     await Liquidatoor.doFlashloan(
       borrower,
       jliquidatedtoken.address,
       jcollateraltoken.address,
-      JTokenjson.address,
+      flashloantoken_address,
       borrow_balance.div(2)
     )
   ).wait();

@@ -10,6 +10,14 @@ interface JoeRouter02 {
         uint256 deadline
     ) external returns (uint256[] memory amounts);
 
+    function swapTokensForExactTokens(
+        uint256 amountOut,
+        uint256 amountInMin,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+    ) external returns (uint256[] memory amounts);
+
     function getAmountsOut(uint256 amountIn, address[] memory path)
         external
         view
