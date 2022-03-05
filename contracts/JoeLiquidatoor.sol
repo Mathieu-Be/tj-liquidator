@@ -161,11 +161,16 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
             "Liquidation error"
         );
 
+        console.log("Liquidation done");
+
         // Collateral token swapped to repay flashloan
         collateralJToken.redeem(collateralJToken.balanceOf(address(this)));
 
+        console.log("Collateral redeemed");
+
         if (collateral_token == address(xjoe)) {
-            xjoe.claim();
+            xjoe.leave(xjoe.balanceOf(address(this)));
+            console.log("Joe claimed");
             collateral_token = xjoe.joe();
         }
 
