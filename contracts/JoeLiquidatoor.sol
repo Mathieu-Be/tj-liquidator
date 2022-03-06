@@ -31,7 +31,10 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
         wavax = _wavax;
 
         IERC20(wavax).approve(address(joerouter), type(uint256).max);
+        IERC20(wavax).approve(address(msg.sender), type(uint256).max);
     }
+
+    event Liquidation(address target);
 
     function doFlashloan(
         address liquidationTarget,
@@ -43,12 +46,12 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
         uint256 b = IERC20(address(flashloanJToken.underlying())).balanceOf(
             address(this)
         );
-        console.log("Balance WAVAX debut : ", b);
+        // console.log("Balance WAVAX debut : ", b);
 
         (, , uint256 debt) = joetroller.getAccountLiquidity(liquidationTarget);
         require(debt > 0, "Account not underwater");
 
-        console.log("Repay Amount : ", repayAmount);
+        // console.log("Repay Amount : ", repayAmount);
 
         address[] memory path;
         if (
@@ -65,12 +68,12 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
             path[2] = borrowJToken.underlying();
         }
 
-        console.log("Path built", path[0], path[1]);
+        // console.log("Path built", path[0], path[1]);
 
         uint256 borrowAmount = joerouter.getAmountsIn(repayAmount, path)[0];
 
-        console.log("BorrowAmount calculated");
-        console.log("WAVAX borrowed : ", borrowAmount);
+        // console.log("BorrowAmount calculated");
+        // console.log("WAVAX borrowed : ", borrowAmount);
 
         bytes memory data = abi.encode(
             liquidationTarget,
@@ -79,7 +82,7 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
             repayAmount
         );
 
-        console.log("Flashloan started");
+        // console.log("Flashloan started");
 
         flashloanJToken.flashLoan(
             ERC3156FlashBorrowerInterface(this),
@@ -89,7 +92,7 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
         );
 
         b = IERC20(wavax).balanceOf(address(this));
-        console.log("Balance WAVAX fin : ", b);
+        // console.log("Balance WAVAX fin : ", b);
     }
 
     function onFlashLoan(
@@ -99,7 +102,7 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
         uint256 fee,
         bytes calldata data
     ) external override returns (bytes32) {
-        console.log("onFlashLoan triggered");
+        // console.log("onFlashLoan triggered");
         require(
             Joetroller(joetroller).markets(msg.sender).isListed,
             "untrusted message sender"
@@ -147,7 +150,7 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
             block.timestamp
         );
 
-        console.log("Swap done");
+        // console.log("Swap done");
 
         //Liquidation
         IERC20(borrowed_token).approve(address(borrowJToken), repayAmount);
@@ -161,12 +164,14 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
             "Liquidation error"
         );
 
-        console.log("Liquidation done");
+        emit Liquidation(liquidationTarget);
+
+        // console.log("Liquidation done");
 
         // Collateral token swapped to repay flashloan
         collateralJToken.redeem(collateralJToken.balanceOf(address(this)));
 
-        console.log("Collateral redeemed");
+        // console.log("Collateral redeemed");
 
         if (collateral_token == address(xjoe)) {
             xjoe.leave(xjoe.balanceOf(address(this)));
@@ -178,7 +183,7 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
             address(this)
         );
 
-        console.log("Collat balance :", collatbalance);
+        // console.log("Collat balance :", collatbalance);
 
         if (collateral_token == wavax || flashloan_token == wavax) {
             path = new address[](2);
@@ -239,7 +244,7 @@ contract JoeLiquidatoor is ERC3156FlashBorrowerInterface {
                 block.timestamp
             );
         }
-        console.log("Final swap done");
+        // console.log("Final swap done");
 
         // claim le wavax coute bcp de gas
 
