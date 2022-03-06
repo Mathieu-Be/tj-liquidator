@@ -1,14 +1,15 @@
 import dotenv from "dotenv";
 import { ethers, network } from "hardhat";
 import { AccountsToLiquidate } from "../graphql/accounts.queries";
-import { Account, AccountJToken } from "../graphql/generated";
+import { Account } from "../graphql/generated";
 import JTokenjson from "../ABI/JAvaxDelegator.json";
 import JoeRouterjson from "../ABI/JoeRouter.json";
 import JoeTrollerjson from "../ABI/Joetroller.json";
 import { JUsdcDelegator } from "../typechain-types/from-abis";
-import { BigNumber, utils } from "ethers";
+import { utils } from "ethers";
 import { InfluxDB, Point } from "@influxdata/influxdb-client";
 import { optimizeLiquidations } from "./optimizeLiquidations";
+import { exit } from "process";
 
 dotenv.config();
 const clientInflux = new InfluxDB({
@@ -19,8 +20,7 @@ const avalancheBucket = clientInflux.getWriteApi("57ac5d56999288ec", "Avalanche"
 
 const wAvax_address = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
 
-const TimeTravel = false;
-const SkipGasCostCheck = false;
+const TimeTravel = true;
 
 const main = async () => {
   const signer = await ethers.getSigner("0xdf3e18d64bc6a983f673ab319ccae4f1a57c7097");
@@ -40,16 +40,21 @@ const main = async () => {
   let accounts: Account[] = [];
 
   if (TimeTravel) {
-    accounts = await AccountsToLiquidate(1, 2);
+    accounts = await AccountsToLiquidate(1, 1.06);
   } else {
     accounts = await AccountsToLiquidate(0, 1);
   }
 
   let target = optimizeLiquidations(accounts);
-  while (TimeTravel || !(await joeTroller.getAccountLiquidity(target.id))[2].gt(0)) {
-    accounts = accounts.filter((account) => account.id !== target.id);
-    target = optimizeLiquidations(accounts);
-    console.log("Account skipped");
+  if (!TimeTravel) {
+    while (!(await joeTroller.getAccountLiquidity(target.id))[2].gt(0)) {
+      accounts = accounts.filter((account) => account.id !== target.id);
+      target = optimizeLiquidations(accounts);
+      console.log("Account skipped");
+    }
+  }
+  if (!target) {
+    exit(0);
   }
   const collateraltoken = target.tokens.reduce((prev, current) => {
     return prev.supplyBalanceUnderlying > current.supplyBalanceUnderlying && prev.enteredMarket ? prev : current;
