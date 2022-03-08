@@ -6,14 +6,16 @@
 4. Keeps profits in wAvax so I can withdraw them from time to time to pay for the fees.
 5. Monitor the bot activity using Grafana.
 
-Main files :
-contract/JoeLiquidatoor.sol for the smart contract part
-scripts/bot.ts for the bot script
+### Main files :
 
-Additional files :
-liquidation-from-script and liquidation-from-contract are two playground scripts that I used for developpment
-database.service.ts connects to my MongoDB database
-ABI folder comes from TJ github and has every ABI and adresses or the Banker Joe contracts
+**contract/JoeLiquidatoor.sol** for the smart contract part<br>
+**scripts/bot.ts** for the bot script<br>
+
+### Additional files :
+
+**liquidation-from-script and liquidation-from-contract** are two playground scripts that I used for developpment<br>
+**database.service.ts** connects to my MongoDB database<br>
+**ABI folder** comes from TJ github and has every ABI and adresses or the Banker Joe contracts
 
 ## Installation
 
