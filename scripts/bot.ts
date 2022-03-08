@@ -88,12 +88,12 @@ const main = async () => {
     "Address : " + liquidatedtoken.id.substring(0, 42)
   );
 
+  // Contract loading
   const jcollateraltoken = (await ethers.getContractAt(
     JTokenjson.abi,
     collateraltoken.id.substring(0, 42),
     bot
   )) as JCollateralCapErc20;
-
   const jliquidatedtoken = (await ethers.getContractAt(
     JTokenjson.abi,
     liquidatedtoken.id.substring(0, 42),
@@ -102,7 +102,8 @@ const main = async () => {
 
   /* Determination of how much we want to repay
     If there is not enough collateral to seize,
-    I calculate what proportion of the borrowed token I can repay, directly from the value in $ 
+    I calculate what proportion of the borrowed token I can repay, directly from the value in $ from the subgraph 
+    (kinda dodgy but quick)
     */
   let borrow_balance = await jliquidatedtoken.callStatic.borrowBalanceCurrent(target.id);
   if (liquidatedtoken.borrowBalanceUnderlying / 2 > collateraltoken.supplyBalanceUnderlying) {
@@ -132,13 +133,15 @@ const main = async () => {
   }
 
   // Very rough estimation of the gas cost of the transaction in regards of the profits
-  // GASCHECK = false allowed me to do some demo liquidations
+  // GASCHECK = false allowed me to do some liquidations on the mainnet without having to compete with other bots
   if (GASCHECK) {
+    // Avax price
     const avax_price = await joeRouter.getAmountsOut(utils.parseEther("1"), [
       WAVAX_ADDRESS,
       "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E", //USDC address
     ]);
 
+    // Gas used by the transaction
     const gas_amount = await Liquidatoor.estimateGas.liquidate(
       target.id,
       jliquidatedtoken.address,
@@ -146,8 +149,10 @@ const main = async () => {
       flashloantoken_address,
       borrow_balance.div(2)
     );
+    // Current gas price
     const gas_price = await bot.getGasPrice();
 
+    // Bignumber calculation handled poorly
     const estimate_costs =
       Number.parseFloat(utils.formatEther(avax_price[1].mul(1e12))) *
       Number.parseFloat(utils.formatEther(gas_amount.mul(gas_price)));
