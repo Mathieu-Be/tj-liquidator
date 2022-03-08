@@ -8,31 +8,22 @@
 
 ### Main files :
 
-**contract/JoeLiquidatoor.sol** for the smart contract part<br>
-**scripts/bot.ts** for the bot script<br>
+**contract/JoeLiquidatoor.sol** for the smart contract part.<br>
+**scripts/bot.ts** for the bot script.<br>
 
 ### Additional files :
 
-**liquidation-from-script and liquidation-from-contract** are two playground scripts that I used for developpment<br>
-**database.service.ts** connects to my MongoDB database<br>
-**ABI folder** comes from TJ github and has every ABI and adresses or the Banker Joe contracts
-
-## Installation
-
-```
-npm install
-npx run codegen
-npx hardhat compile
-```
-The first compilation is done to generate typechain types.
+**liquidation-from-script and liquidation-from-contract** are two playground scripts that I used for developpment.<br>
+**database.service.ts** connects to my MongoDB database.<br>
+**ABI folder** comes from TJ github and has every ABI and adresses for the Trader Joe contracts I use.
 
 ## Smart Contract Flow
 
 I send to my smart contract the liquidated, collateral and flashloan tokens, and the amount that I want to liquidate.
 
-I use wAvax as much as I can for the flashloan as it is easier to swap it with the others tokens. When I can't, I use USDC.e ou USDT.e, from the two biggest pools on TJ for lower slippage.
+I use wAvax as much as I can for the flashloan as it is easier to swap it with the others tokens. When I can't, I use USDC.e ou USDT.e, from the two biggest pools on TJ, for lower slippage.
 
-I determine how much token I need to borrow, then engage the flashloan. Flashloan token is swapped to repay borrow. I then swap the collateral seized into wAvax first, then swap the necessary amount only to repay the flashloan. Profits are kept in wAvax and I have infinite allowance on them to get them back by batch.
+I calculate how much token I need to borrow, then engage the flashloan. Flashloan token is swapped to repay borrow. I then swap the collateral seized into wAvax first, then swap the necessary amount to repay the flashloan. Profits are kept in wAvax and I have infinite allowance on them to get them back manually.
 
 ## Proofs
 
@@ -44,6 +35,15 @@ Here is the two liquidations I made on mainnet :
 
 I love Grafana so I have set up a basic Grafana display to monitor all the flashloan attempts. I use my InfluxDB instance to store the data. These are no real profits sadly, just mock data.
 ![image](Grafana.png)
+
+## Installation
+
+```
+npm install
+npx run codegen
+npx hardhat compile
+```
+The first compilation is done to generate typechain types. Codegen generates the Account type from the graphQL query response.
 
 ## Credits
 
