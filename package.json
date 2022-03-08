@@ -38,7 +38,10 @@
     "accounts": "npx hardhat accounts",
     "balances": "npx hardhat balances",
     "generate": "graphql-codegen",
-    "typechain": "npx typechain --target=ethers-v5 --out-dir typechain-types/from-abis  './ABI/*.json'"
+    "typechain": "npx typechain --target=ethers-v5 --out-dir typechain-types/from-abis  './ABI/*.json'",
+    "deploy-mainnet": "npx hardhat run scripts/deploy.ts --network mainnet",
+    "run-mainnet": "npx hardhat run scripts/bot.ts --network mainnet"
+
   },
   "dependencies": {
     "@influxdata/influxdb-client": "^1.23.0",

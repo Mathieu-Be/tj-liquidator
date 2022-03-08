@@ -20,7 +20,7 @@ const avalancheBucket = clientInflux.getWriteApi("57ac5d56999288ec", "Avalanche"
 
 const wAvax_address = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
 
-const TimeTravel = true;
+const TimeTravel = false;
 
 const main = async () => {
   const signer = await ethers.getSigner("0xdf3e18d64bc6a983f673ab319ccae4f1a57c7097");
@@ -36,6 +36,7 @@ const main = async () => {
   console.log("Contract deployed on : " + Liquidatoor.address);
 
   const joeTroller = await ethers.getContractAt("Joetroller", JoeTrollerjson.address, signer);
+  const joeRouter = await ethers.getContractAt("JoeRouter02", JoeRouterjson.address, signer);
 
   let accounts: Account[] = [];
 
@@ -132,8 +133,32 @@ const main = async () => {
     flashloantoken_address = "0x8b650e26404AC6837539ca96812f0123601E4448";
   }
 
+  const avax_price = await joeRouter.getAmountsOut(utils.parseEther("1"), [
+    wAvax_address,
+    "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+  ]);
+
+  const gas_amount = await Liquidatoor.estimateGas.liquidate(
+    target.id,
+    jliquidatedtoken.address,
+    jcollateraltoken.address,
+    flashloantoken_address,
+    borrow_balance.div(2)
+  );
+
+  const gas_price = await signer.getGasPrice();
+
+  const estimate_costs =
+    Number.parseFloat(utils.formatEther(avax_price[1].mul(1e12))) *
+    Number.parseFloat(utils.formatEther(gas_amount.mul(gas_price)));
+
+  const estimate_earnings =
+    Math.min(liquidatedtoken.borrowBalanceUnderlying / 2, collateraltoken.supplyBalanceUnderlying) * 0.08;
+
+  console.log(estimate_earnings, estimate_costs);
+
   const receipt = await (
-    await Liquidatoor.doFlashloan(
+    await Liquidatoor.liquidate(
       target.id,
       jliquidatedtoken.address,
       jcollateraltoken.address,
