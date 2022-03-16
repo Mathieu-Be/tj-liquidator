@@ -70,7 +70,7 @@ describe("Contract Tests", function () {
   describe("Liquidation", function () {
     it("Should fail if the account is not underwater", async function () {
       await expect(
-        Liquidatoor.doFlashloan(
+        Liquidatoor.liquidate(
           signer.address,
           jMIM.address,
           jDAI.address,
@@ -82,7 +82,7 @@ describe("Contract Tests", function () {
 
     it("Should liquidate the underwater account", async function () {
       // Low APY on DAI and high negative APY on MIM alows me to be underwater when time passes
-      await network.provider.send("evm_increaseTime", [60 * 60 * 24 * 10]); // 10 day
+      await network.provider.send("evm_increaseTime", [60 * 60 * 24 * 100]); // 100 day
       await jDAI.accrueInterest();
       await jMIM.accrueInterest();
       const liquidity = await joeTroller.getAccountLiquidity(signer.address);
@@ -92,7 +92,7 @@ describe("Contract Tests", function () {
       expect(liquidity[2]).to.be.gt(0);
 
       await expect(
-        Liquidatoor.doFlashloan(
+        Liquidatoor.liquidate(
           signer.address,
           jMIM.address,
           jDAI.address,
