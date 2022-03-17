@@ -7,8 +7,7 @@ import JoeTrollerjson from "../ABI/Joetroller.json";
 import JDaijson from "../ABI/JDaiDelegator.json";
 import JMIMjson from "../ABI/JMimDelegator.json";
 import JWAVAXjson from "../ABI/JAvaxDelegator.json";
-import { IERC20, JCollateralCapErc20, JoeLiquidatoor } from "../typechain-types";
-import { JoeRouter, Joetroller } from "../typechain-types/from-abis";
+import { IERC20, JCollateralCapErc20, JoeLiquidatoor, JoeRouter02, Joetroller } from "../typechain-types";
 
 const WAVAX_ADDRESS = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
 const DAI_ADDRESS = "0xd586e7f844cea2f87f50152665bcbc2c279d8d70";
@@ -19,7 +18,7 @@ let wAvax: IERC20;
 let dai: IERC20;
 let mim: IERC20;
 let Liquidatoor: JoeLiquidatoor;
-let joeRouter: JoeRouter;
+let joeRouter: JoeRouter02;
 let joeTroller: Joetroller;
 let jDAI: JCollateralCapErc20;
 let jMIM: JCollateralCapErc20;
@@ -39,7 +38,7 @@ describe("Contract Tests", function () {
       "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7" //wAvax
     );
 
-    joeRouter = (await ethers.getContractAt(JoeRouterjson.abi, JoeRouterjson.address, signer)) as JoeRouter;
+    joeRouter = (await ethers.getContractAt(JoeRouterjson.abi, JoeRouterjson.address, signer)) as JoeRouter02;
     joeTroller = (await ethers.getContractAt(JoeTrollerjson.abi, JoeTrollerjson.address, signer)) as Joetroller;
     jDAI = (await ethers.getContractAt(JDaijson.abi, JDaijson.address, signer)) as JCollateralCapErc20;
     jMIM = (await ethers.getContractAt(JMIMjson.abi, JMIMjson.address, signer)) as JCollateralCapErc20;
