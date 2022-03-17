@@ -7,7 +7,7 @@ import JoeTrollerjson from "../ABI/Joetroller.json";
 import JDaijson from "../ABI/JDaiDelegator.json";
 import JMIMjson from "../ABI/JMimDelegator.json";
 import JWAVAXjson from "../ABI/JAvaxDelegator.json";
-import { IERC20, JCollateralCapErc20, JoeLiquidatoor, JoeRouter02, Joetroller } from "../typechain-types";
+import { IERC20, JCollateralCapErc20, JoeLiquidatoor, JoeRouter02, Joetroller } from "../typechain-types/index";
 
 const WAVAX_ADDRESS = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7";
 const DAI_ADDRESS = "0xd586e7f844cea2f87f50152665bcbc2c279d8d70";
