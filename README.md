@@ -36,6 +36,14 @@ Here is the two liquidations I made on mainnet :
 I love Grafana so I have set up a basic Grafana display to monitor all the flashloan attempts. I use my InfluxDB instance to store the data. These are no real profits sadly, just mock data.
 ![image](Grafana.png)
 
+## Testing
+
+```
+npx hardhat test
+```
+
+For some reason, if you never compiled the contracts, the first ```npx hardhat test``` crashes because typechain doesn't generate types on time. Running it a second time should work.
+
 ## Installation
 
 ```
@@ -44,6 +52,8 @@ npx run codegen
 npx hardhat compile
 ```
 The first compilation is done to generate typechain types. Codegen generates the Account type from the graphQL query response.
+
+
 
 ## Credits
 
